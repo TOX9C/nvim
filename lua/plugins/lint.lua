@@ -5,9 +5,9 @@ return {
 	config = function()
 		local lint = require("lint")
 		lint.linters_by_ft = {
-			javascript = { "eslint" }, -- change to eslint_d if you prefer
+			javascript = { "eslint" },
 			typescript = { "eslint" },
-			python = { "ruff" }, -- or "pylint" if you want
+			python = { "ruff" },
 			lua = { "luacheck" },
 			sh = { "shellcheck" },
 			yaml = { "yamllint" },
