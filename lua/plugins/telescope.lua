@@ -4,14 +4,12 @@ return {
 	event = "VeryLazy",
 	dependencies = {
 		"nvim-lua/plenary.nvim",
-		"debugloop/telescope-undo.nvim",
 		"nvim-telescope/telescope-file-browser.nvim",
 		"nvim-telescope/telescope-live-grep-args.nvim",
 	},
 	config = function()
 		local telescope = require("telescope")
 		local actions = require("telescope.actions")
-		local undo_actions = require("telescope-undo.actions")
 		local lga_actions = require("telescope-live-grep-args.actions")
 
 		telescope.setup({
@@ -29,19 +27,6 @@ return {
 				},
 			},
 			extensions = {
-				undo = {
-					use_delta = true, -- Use delta to show diffs
-					side_by_side = true, -- Show additions/deletions side by side
-					entry_format = "󰣜  #$ID, $STAT, $TIME", -- Undo entry format
-					layout_strategy = "flex",
-					mappings = {
-						i = {
-							["<cr>"] = undo_actions.yank_additions, -- Yank additions
-							["<c-\\>"] = undo_actions.yank_deletions, -- Yank deletions
-							["<tab>"] = undo_actions.restore, -- Restore this undo entry
-						},
-					},
-				},
 				live_grep_args = {
 					auto_quoting = true, -- Auto quote multi-word search
 					mappings = {
@@ -67,20 +52,10 @@ return {
 		})
 
 		-- Load extensions
-		telescope.load_extension("undo")
 		telescope.load_extension("file_browser")
 		telescope.load_extension("live_grep_args")
 
 		local map = vim.keymap.set
-
-		map("n", "<leader>u", function()
-			vim.notify(
-				"<cr> yank additions\n<c-\\> yank deletions\n<tab> restore",
-				vim.log.levels.INFO,
-				{ title = "Undo Keybinds", timeout = 15000 }
-			)
-			telescope.extensions.undo.undo()
-		end, { desc = "Undo tree" })
 
 		vim.api.nvim_create_user_command("LiveGrep", function()
 			telescope.extensions.live_grep_args.live_grep_args({
@@ -90,14 +65,8 @@ return {
 		end, { desc = "Live grep with extra arguments" })
 		map("n", "\\", "<cmd>LiveGrep<cr>", { desc = "Live grep" })
 
-		map("n", "<leader>o", "<cmd>Telescope oldfiles<cr>", { desc = "Open recent files" })
-
 		map("n", "<leader>f", function()
 			telescope.extensions.file_browser.file_browser()
 		end, { desc = "Browse files" })
-
-		map("n", "<leader>.", function()
-			telescope.extensions.file_browser.file_browser({ path = vim.fn.stdpath("config") })
-		end, { desc = "Browse Neovim config" })
 	end,
 }

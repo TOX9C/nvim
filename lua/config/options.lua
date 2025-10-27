@@ -1,12 +1,10 @@
-
 vim.opt.nu = true
 vim.opt.relativenumber = true
 
-
 vim.o.cursorline = true
-vim.o.showmatch = true            -- Highlight matching brackets
-vim.o.cmdheight = 1               -- Command line height
-vim.o.splitbelow = true           -- Horizontal splits below
+vim.o.showmatch = true -- Highlight matching brackets
+vim.o.cmdheight = 1 -- Command line height
+vim.o.splitbelow = true -- Horizontal splits below
 vim.o.splitright = true
 vim.opt.tabstop = 4
 vim.opt.softtabstop = 4
@@ -31,14 +29,12 @@ vim.opt.updatetime = 50
 
 vim.opt.colorcolumn = "80"
 
-
-vim.o.ignorecase = true           -- Case-insensitive search
-vim.o.smartcase = true            -- But case-sensitive if uppercase in query
-vim.o.incsearch = true            -- Show matches as you type
-vim.o.hlsearch = true             -- Highlight search results
-vim.o.showmatch = true            -- Jump to matching bracket
+vim.o.ignorecase = true -- Case-insensitive search
+vim.o.smartcase = true -- But case-sensitive if uppercase in query
+vim.o.incsearch = true -- Show matches as you type
+vim.o.hlsearch = true -- Highlight search results
+vim.o.showmatch = true -- Jump to matching bracket
 vim.o.magic = true
-
 
 vim.g.lazyvim_prettier_needs_config = true
 vim.g.lazyvim_picker = "telescope"
@@ -48,3 +44,22 @@ vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 vim.opt.termguicolors = true
 
+vim.o.breakindent = true
+
+vim.o.list = true
+vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
+vim.o.inccommand = "split"
+vim.o.confirm = true
+
+vim.schedule(function()
+	vim.o.clipboard = "unnamedplus"
+end)
+
+-- Highlight when yanking
+vim.api.nvim_create_autocmd("TextYankPost", {
+	desc = "Highlight when yanking (copying) text",
+	group = vim.api.nvim_create_augroup("kickstart-highlight-yank", { clear = true }),
+	callback = function()
+		vim.hl.on_yank()
+	end,
+})
