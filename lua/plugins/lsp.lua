@@ -1,90 +1,82 @@
-local map = vim.keymap.set
-
 ---@diagnostic disable: undefined-global
+local map = vim.keymap.set
 return {
-  "neovim/nvim-lspconfig",
-  lazy = false,
-  dependencies = {
-    "saghen/blink.cmp",        -- LSP completion capabilities
-    "mrcjkb/rustaceanvim",     -- Rust setup
-    "SmiteshP/nvim-navic",     -- Code context in winbar
-  },
-  config = function()
-    local lspconfig = require("lspconfig")
-    local navic = require("nvim-navic")
+	"neovim/nvim-lspconfig",
+	lazy = false,
+	dependencies = {
+		"williamboman/mason.nvim",
+		"williamboman/mason-lspconfig.nvim",
+		"SmiteshP/nvim-navic",
+		"hrsh7th/cmp-nvim-lsp",
+	},
+	config = function()
+		local lspconfig = require("lspconfig")
+		local navic = require("nvim-navic")
 
-    -- Helper: on_attach for keymaps + navic
-    local function on_attach(client, bufnr)
-      local buf_map = function(keys, func, desc)
-        map("n", keys, func, { buffer = bufnr, desc = "LSP: " .. desc })
-      end
+		-- on_attach helper
+		local on_attach = function(client, bufnr)
+			local nmap = function(keys, fn, desc)
+				vim.keymap.set("n", keys, fn, { buffer = bufnr, desc = desc })
+			end
+			nmap("gd", vim.lsp.buf.definition, "Goto Definition")
+			nmap("gD", vim.lsp.buf.declaration, "Goto Declaration")
+			nmap("K", vim.lsp.buf.hover, "Hover")
+			nmap("gr", vim.lsp.buf.references, "References")
+			nmap("<leader>rn", vim.lsp.buf.rename, "Rename")
+			nmap("<leader>ca", vim.lsp.buf.code_action, "Code Action")
+			if client.server_capabilities.documentSymbolProvider then
+				navic.attach(client, bufnr)
+			end
+		end
 
-      buf_map("gd", require("telescope.builtin").lsp_definitions, "Goto Definition")
-      buf_map("g?", require("telescope.builtin").lsp_references, "References")
-      buf_map("grI", require("telescope.builtin").lsp_implementations, "Goto Implementation")
-      buf_map("grT", require("telescope.builtin").lsp_type_definitions, "Goto Type")
-      buf_map("grS", require("telescope.builtin").lsp_dynamic_workspace_symbols, "Workspace Symbols")
-      buf_map("grN", vim.lsp.buf.rename, "Rename")
-      buf_map("grA", vim.lsp.buf.code_action, "Code Action")
-      buf_map("K", vim.lsp.buf.hover, "Hover Documentation")
-      buf_map("<C-s>", vim.lsp.buf.signature_help, "Signature Help")
-      buf_map("gD", vim.lsp.buf.declaration, "Goto Declaration")
+		-- Capabilities for nvim-cmp
+		local capabilities = vim.lsp.protocol.make_client_capabilities()
+		local has_cmp, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
+		if has_cmp then
+			capabilities = cmp_nvim_lsp.default_capabilities(capabilities)
+		end
 
-      -- Highlight references under cursor
-      if client.server_capabilities.documentHighlightProvider then
-        vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-          buffer = bufnr,
-          callback = vim.lsp.buf.document_highlight,
-        })
-        vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
-          buffer = bufnr,
-          callback = vim.lsp.buf.clear_references,
-        })
-      end
+		-- servers table
+		local servers = {
+			lua_ls = {
+				settings = {
+					Lua = {
+						runtime = { version = "LuaJIT" },
+						diagnostics = { globals = { "vim" } },
+						workspace = { library = vim.api.nvim_get_runtime_file("", true) },
+						telemetry = { enable = false },
+					},
+				},
+			},
+			pyright = {},
+			tsserver = {}, -- note: lspconfig name is tsserver (mason installs tsserver). you can still configure tsserver; if you choose ts_ls instead, change here.
+			rust_analyzer = {},
+			clangd = {},
+			cssls = {},
+			html = {},
+			marksman = {},
+			yamlls = {},
+			jsonls = {},
+			-- VHDL: many setups use `ghdl_ls` or `vhdl_ls` if available; check your install
+			-- if using ghdl-ls via system install, change below to the server name exposed by lspconfig
+		}
 
-      -- Attach navic if supported
-      if client.server_capabilities.documentSymbolProvider then
-        navic.attach(client, bufnr)
-      end
+		for name, cfg in pairs(servers) do
+			cfg = cfg or {}
+			cfg.on_attach = on_attach
+			cfg.capabilities = vim.tbl_deep_extend("force", capabilities, cfg.capabilities or {})
+			-- protect against servers not present in lspconfig
+			if lspconfig[name] then
+				lspconfig[name].setup(cfg)
+			else
+				vim.schedule(function()
+					vim.notify("lspconfig: server not available: " .. name, vim.log.levels.WARN)
+				end)
+			end
+		end
 
-      -- Set omnifunc for LSP completion
-      vim.bo[bufnr].omnifunc = "v:lua.vim.lsp.omnifunc"
-    end
-
-    -- LSP capabilities (for completion)
-    local capabilities = vim.lsp.protocol.make_client_capabilities()
-    capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
-
-    local servers = {
-      lua_ls = {
-        settings = {
-          Lua = {
-            runtime = { version = "LuaJIT" },
-            diagnostics = { globals = { "vim" } },
-            workspace = { library = vim.api.nvim_get_runtime_file("", true) },
-            telemetry = { enable = false },
-          },
-        },
-      },
-      pyright = {},
-      ts_ls = {},
-      rust_analyzer = {},
-      bashls = {},
-      clangd = {},
-      cssls = {},
-      html = {},
-      marksman = {},
-      yamlls = {},
-      jsonls = {},
-    }
-
-    -- Setup all servers
-    for name, config in pairs(servers) do
-      config = config or {}
-      config.capabilities = vim.tbl_deep_extend("force", capabilities, config.capabilities or {})
-      config.on_attach = on_attach
-      lspconfig[name].setup(config)
-    end
-  end,
+		-- Global diagnostics keymaps
+		map("n", "[d", vim.diagnostic.goto_prev, { desc = "Prev diagnostic" })
+		map("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
+	end,
 }
-
