@@ -13,12 +13,10 @@ vim.keymap.set("n", "N", "Nzzzv")
 vim.keymap.set("x", "<leader>p", [["_dP]])
 vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]])
 vim.keymap.set("n", "<leader>Y", [["+Y]])
-vim.keymap.set({ "n", "v" }, "<leader>d", "\"_d")
-
+vim.keymap.set({ "n", "v" }, "<leader>d", '"_d')
 
 vim.keymap.set("n", "+", "<C-a>")
 vim.keymap.set("n", "-", "<C-x>")
-
 
 vim.keymap.set("n", "<C-h>", "<C-w>h")
 vim.keymap.set("n", "<C-k>", "<C-w>k")
@@ -28,6 +26,6 @@ vim.keymap.set("n", "<C-l>", "<C-w>l")
 vim.keymap.set("n", "<leader>%", ":split<Return>", opts)
 vim.keymap.set("n", "<leader>-", ":vsplit<Return>", opts)
 
-vim.keymap.set("n", "L", ":BufferLineCycleNext<CR>")
-vim.keymap.set("n", "H", ":BufferLineCyclePrev<CR>")
-vim.keymap.set("n","<leader>bd",":bdelete!<CR>")
+vim.keymap.set("n", "H", "<Plug>(cokeline-focus-prev)")
+vim.keymap.set("n", "L", "<Plug>(cokeline-focus-next)")
+vim.keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "Close current buffer" })
