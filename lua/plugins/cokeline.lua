@@ -1,33 +1,18 @@
+-- lua/plugins/cokeline.lua
 return {
 	"willothy/nvim-cokeline",
-	-- Ensure cokeline loads after your colorscheme
-	-- If using a colorscheme plugin, you could add: `after = "your-colorscheme-name"`
 	config = function()
 		local get_hex = require("cokeline.hlgroups").get_hl_attr
 
-		-- A safe function to get a color, with a fallback
-		local function get_color_safe(hl_group, attribute, fallback)
-			local color_ok, color = pcall(get_hex, hl_group, attribute)
-			if color_ok and color then
-				return color
-			end
-			-- Fallback color if the group doesn't exist. You can change these.
-			vim.notify(
-				"Highlight group '" .. hl_group .. "' not found, using fallback for cokeline.",
-				vim.log.levels.WARN
-			)
-			return fallback or "#FFFFFF"
-		end
-
 		require("cokeline").setup({
+			-- Enable if you use a sidebar plugin like nvim-tree
 			sidebar = {
 				filetype = { "NvimTree", "neo-tree", "NvimTree_1" },
 				components = {
 					{
 						text = "  NvimTree",
-						fg = get_color_safe("Comment", "fg", "#888888"),
-						-- Using 'NONE' for background is a safe choice for transparency
-						bg = "NONE",
+						fg = get_hex("Comment", "fg"),
+						bg = get_hex("NvimTreeNormal", "bg"),
 						bold = true,
 					},
 				},
@@ -35,19 +20,61 @@ return {
 
 			default_hl = {
 				fg = function(buffer)
-					if buffer.is_focused then
-						return get_color_safe("Normal", "fg", "#FFFFFF")
-					else
-						return get_color_safe("Comment", "fg", "#888888")
-					end
+					return buffer.is_focused and get_hex("Normal", "fg") or get_hex("Comment", "fg")
 				end,
 				bg = "NONE",
 			},
 
-			-- ... (your existing components configuration can follow here)
 			components = {
-				-- Your component definitions from earlier.
-				-- Consider adding `bg = 'NONE'` to each component for full transparency.
+				{
+					text = function(buffer)
+						return " " .. buffer.index .. " "
+					end,
+					bold = function(buffer)
+						return buffer.is_focused
+					end,
+				},
+				{
+					text = function(buffer)
+						return buffer.devicon.icon
+					end,
+					fg = function(buffer)
+						return buffer.devicon.color
+					end,
+				},
+				{
+					text = function(buffer)
+						return buffer.unique_prefix
+					end,
+					fg = get_hex("Comment", "fg"),
+					italic = true,
+				},
+				{
+					text = function(buffer)
+						return buffer.filename .. " "
+					end,
+					bold = function(buffer)
+						return buffer.is_focused
+					end,
+					underline = function(buffer)
+						return buffer.is_hovered and not buffer.is_focused
+					end,
+				},
+				{
+					text = function(buffer)
+						return buffer.is_modified and "● " or ""
+					end,
+					fg = function(buffer)
+						return buffer.is_modified and get_hex("Error", "fg") or nil
+					end,
+				},
+				{
+					text = "  ",
+					fg = get_hex("Error", "fg"),
+					on_click = function(_, _, _, _, buffer)
+						buffer:delete()
+					end,
+				},
 			},
 		})
 	end,
